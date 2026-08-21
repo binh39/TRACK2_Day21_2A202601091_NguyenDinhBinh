@@ -39,6 +39,10 @@ def train(
     X_eval = df_eval.drop(columns=["target"])
     y_eval = df_eval["target"]
 
+    experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME")
+    if experiment_name:
+        mlflow.set_experiment(experiment_name)
+
     with mlflow.start_run():
 
         mlflow.log_params(params)
