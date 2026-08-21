@@ -5,8 +5,11 @@ import yaml
 import json
 import joblib
 import os
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 EVAL_THRESHOLD = 0.70
 
@@ -40,7 +43,19 @@ def train(
 
         mlflow.log_params(params)
 
-        model = RandomForestClassifier(**params, random_state=42)
+        model_type = params.get("model_type", "random_forest")
+        model_params = {k: v for k, v in params.items() if k != "model_type"}
+        if model_type == "random_forest":
+            model = RandomForestClassifier(**model_params, random_state=42)
+        elif model_type == "gradient_boosting":
+            model = GradientBoostingClassifier(**model_params, random_state=42)
+        elif model_type == "logistic_regression":
+            model = make_pipeline(
+                StandardScaler(),
+                LogisticRegression(**model_params, random_state=42, max_iter=2000),
+            )
+        else:
+            raise ValueError(f"Unsupported model_type: {model_type}")
         model.fit(X_train, y_train)
 
         preds = model.predict(X_eval)
@@ -49,13 +64,36 @@ def train(
 
         mlflow.log_metric("accuracy", acc)
         mlflow.log_metric("f1_score", f1)
+        mlflow.log_param("model_type", model_type)
         mlflow.sklearn.log_model(model, "model")
 
         print(f"Accuracy: {acc:.4f} | F1: {f1:.4f}")
 
+        label_distribution = {
+            str(label): float((y_train == label).mean())
+            for label in sorted(y_train.unique())
+        }
+        metrics = {
+            "accuracy": acc,
+            "f1_score": f1,
+            "model_type": model_type,
+            "label_distribution": label_distribution,
+        }
         os.makedirs("outputs", exist_ok=True)
         with open("outputs/metrics.json", "w") as f:
-            json.dump({"accuracy": acc, "f1_score": f1}, f)
+            json.dump(metrics, f, indent=2)
+        with open("outputs/report.txt", "w") as f:
+            f.write(f"model_type: {model_type}\n")
+            f.write(f"accuracy: {acc:.4f}\n")
+            f.write(f"f1_score: {f1:.4f}\n\n")
+            f.write("confusion_matrix:\n")
+            f.write(f"{confusion_matrix(y_eval, preds).tolist()}\n\n")
+            f.write("classification_report:\n")
+            f.write(classification_report(y_eval, preds, zero_division=0))
+            f.write("\ntraining_label_distribution:\n")
+            f.write(json.dumps(label_distribution, indent=2))
+            if any(ratio < 0.10 for ratio in label_distribution.values()):
+                f.write("\nWARNING: at least one label represents less than 10% of training data.\n")
 
         os.makedirs("models", exist_ok=True)
         joblib.dump(model, "models/model.pkl")

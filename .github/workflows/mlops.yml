@@ -89,17 +89,39 @@ jobs:
           ACC=$(python -c "import json; print(json.load(open('outputs/metrics.json'))['accuracy'])")
           echo "accuracy=$ACC" >> "$GITHUB_OUTPUT"
 
+      - name: Check model rollback gate
+        # Bonus 4: compare against the currently deployed model before promotion.
+        run: |
+          if aws s3 cp "s3://${{ secrets.CLOUD_BUCKET }}/models/latest/metrics.json" /tmp/previous_metrics.json 2>/dev/null; then
+            python - <<'EOF'
+          import json
+          new = json.load(open("outputs/metrics.json"))
+          old = json.load(open("/tmp/previous_metrics.json"))
+          new_acc = float(new["accuracy"])
+          old_acc = float(old["accuracy"])
+          if new_acc < old_acc:
+              raise SystemExit(f"ROLLBACK: new accuracy {new_acc:.4f} < previous {old_acc:.4f}")
+          print(f"PROMOTE: new accuracy {new_acc:.4f} >= previous {old_acc:.4f}")
+          EOF
+          else
+            echo "No previous metrics found; promoting first model."
+          fi
+
       - name: Upload model to Cloud Storage
-        # TODO 5: Su dung cloud SDK de upload models/model.pkl len
-        #         <bucket>/models/latest/model.pkl.
-        #         Ten bucket lay tu secret CLOUD_BUCKET.
         run: aws s3 cp models/model.pkl "s3://${{ secrets.CLOUD_BUCKET }}/models/latest/model.pkl"
+
+      - name: Publish metrics and report
+        run: |
+          aws s3 cp outputs/metrics.json "s3://${{ secrets.CLOUD_BUCKET }}/models/latest/metrics.json"
+          aws s3 cp outputs/report.txt "s3://${{ secrets.CLOUD_BUCKET }}/models/latest/report.txt"
 
       - name: Save metrics as artifact
         uses: actions/upload-artifact@v4
         with:
           name: metrics
-          path: outputs/metrics.json
+          path: |
+            outputs/metrics.json
+            outputs/report.txt
 
 
   # ---------------------------------------------------------------------------
