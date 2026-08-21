@@ -9,5 +9,13 @@ sa-key.json
 .env
 .venv/
 __pycache__/
+data/*.csv
+models/
+outputs/
+mlruns/
+mlflow.db
+.dvc/cache/
+.env
+*.pyc
 *.pyc
 .DS_Store
