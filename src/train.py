@@ -44,15 +44,21 @@ def train(
         mlflow.log_params(params)
 
         model_type = params.get("model_type", "random_forest")
-        model_params = {k: v for k, v in params.items() if k != "model_type"}
         if model_type == "random_forest":
+            allowed = {"n_estimators", "max_depth", "min_samples_split", "max_features", "class_weight"}
+            model_params = {k: v for k, v in params.items() if k in allowed}
             model = RandomForestClassifier(**model_params, random_state=42)
         elif model_type == "gradient_boosting":
+            allowed = {"n_estimators", "max_depth", "min_samples_split", "learning_rate", "subsample"}
+            model_params = {k: v for k, v in params.items() if k in allowed}
             model = GradientBoostingClassifier(**model_params, random_state=42)
         elif model_type == "logistic_regression":
+            allowed = {"C", "solver", "penalty", "class_weight", "max_iter"}
+            model_params = {k: v for k, v in params.items() if k in allowed}
+            model_params.setdefault("max_iter", 2000)
             model = make_pipeline(
                 StandardScaler(),
-                LogisticRegression(**model_params, random_state=42, max_iter=2000),
+                LogisticRegression(**model_params, random_state=42),
             )
         else:
             raise ValueError(f"Unsupported model_type: {model_type}")
