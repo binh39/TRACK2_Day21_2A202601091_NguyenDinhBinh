@@ -17,5 +17,6 @@ mlflow.db
 .dvc/cache/
 .env
 *.pyc
+*.pem
 *.pyc
 .DS_Store
