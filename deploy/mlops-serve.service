@@ -1,0 +1,17 @@
+[Unit]
+Description=MLOps Wine Prediction API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/mlops-lab
+EnvironmentFile=-/etc/mlops-serve.env
+Environment="PATH=/opt/mlops-lab/.venv/bin"
+ExecStart=/opt/mlops-lab/.venv/bin/python src/serve.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
