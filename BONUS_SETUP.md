@@ -5,9 +5,9 @@
 Tạo một repository trên DagsHub và lấy thông tin remote MLflow. Thêm ba GitHub Secrets:
 
 ```text
-MLFLOW_TRACKING_URI=https://dagshub.com/<username>/<repo>.mlflow
-MLFLOW_TRACKING_USERNAME=<dagshub-username>
-MLFLOW_TRACKING_PASSWORD=<dagshub-token>
+MLFLOW_TRACKING_URI=
+MLFLOW_TRACKING_USERNAME=
+MLFLOW_TRACKING_PASSWORD=
 ```
 
 Workflow đã đọc các secrets này. Khi được khai báo, các runs từ job Train sẽ được ghi vào DagsHub thay vì chỉ lưu local.
