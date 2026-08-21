@@ -13,6 +13,7 @@ Pipeline triển khai mô hình Wine Quality gồm: DVC quản lý dữ liệu t
 - `/health`: `{"status":"ok"}`.
 - `/predict`: trả về dự đoán hợp lệ, ví dụ `{"prediction":0,"label":"thap"}`.
 - Model đã upload: `s3://mlops-vinai-545863790277-us-east-1-an/models/latest/model.pkl`.
+- Metrics/report đã upload: `models/latest/metrics.json` và `models/latest/report.txt`.
 
 ## 3. Thí nghiệm MLflow
 
@@ -28,7 +29,9 @@ Bộ tham số cuối cùng được chọn vì đạt accuracy `0.7460`, vượ
 
 ## 4. CI/CD
 
-Workflow thành công ở các job Unit Test, Train và Eval với commit `a37502b`. Job Deploy đã được kiểm tra thủ công trên EC2 và API hoạt động. Cần chạy lại workflow sau khi cập nhật đúng GitHub Secrets `VM_HOST`, `VM_USER`, `VM_SSH_KEY` để cả bốn job xanh.
+Workflow thành công cả bốn job Unit Test, Train, Eval và Deploy với commit `f98b91d`.
+
+Rollback gate, performance report và data-drift warning đã được tích hợp trong workflow.
 
 ## 5. Bằng chứng cần chụp màn hình
 
@@ -37,3 +40,5 @@ Workflow thành công ở các job Unit Test, Train và Eval với commit `a3750
 3. S3 Console: prefix `dvc/` và `models/latest/model.pkl`.
 4. Terminal/API: kết quả `/health` và `/predict`.
 5. GitHub commit `ee5faa0`: commit dữ liệu mới kích hoạt continual training.
+
+Bonus DagsHub cần thêm các secrets được hướng dẫn trong `BONUS_SETUP.md`.
